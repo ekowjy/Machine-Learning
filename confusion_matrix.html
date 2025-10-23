@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confusion Matrix Interaktif (3 Grid Mendatar)</title>
+<style>
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    margin: 0;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 25px;
+    max-width: 1400px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 25px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  }
+
+  h1 {
+    grid-column: span 3;
+    text-align: center;
+    font-size: 2em;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    grid-column: span 3;
+    text-align: center;
+    color: #555;
+    margin-bottom: 30px;
+  }
+
+  /* === PANEL 1: CONTROL === */
+  .controls {
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    border-radius: 20px;
+    padding: 25px;
+  }
+
+  .slider-group {
+    margin-bottom: 20px;
+  }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .slider-value {
+    background: #667eea;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    margin-top: 10px;
+    appearance: none;
+    height: 8px;
+    border-radius: 6px;
+    background: linear-gradient(to right, #667eea, #764ba2);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+  }
+
+  /* === PANEL 2: MATRIX === */
+  .matrix {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 100px repeat(2, 120px);
+    grid-template-rows: 40px repeat(2, 120px);
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .matrix-header, .matrix-row-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .matrix-header { color: #667eea; }
+  .matrix-row-label { color: #764ba2; }
+
+  .matrix-cell {
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1.2em;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.3s;
+  }
+
+  .matrix-cell:hover { transform: scale(1.05); }
+
+  .tp { background: linear-gradient(135deg, #667eea, #764ba2); }
+  .tn { background: linear-gradient(135deg, #48c6ef, #6f86d6); }
+  .fp { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .fn { background: linear-gradient(135deg, #fa709a, #fee140); color: #333; }
+
+  /* === PANEL 3: METRICS === */
+  .metrics {
+    background: linear-gradient(135deg, #f5f7fa, #e3e9f7);
+    border-radius: 20px;
+    padding: 25px;
+  }
+
+  .metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .metric-title {
+    font-size: 0.9em;
+    color: #666;
+  }
+
+  .metric-value {
+    font-size: 2em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .metric-formula {
+    font-size: 0.8em;
+    color: #888;
+  }
+
+  @media (max-width: 992px) {
+    .container {
+      grid-template-columns: 1fr;
+    }
+    h1, .subtitle {
+      grid-column: 1;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎯 Confusion Matrix Interaktif</h1>
+  <p class="subtitle">Versi 3 Panel Mendatar: Control – Matrix – Metrics</p>
+
+  <!-- PANEL 1 -->
+  <div class="controls">
+    <div class="slider-group">
+      <div class="slider-label"><span>True Positive (TP)</span><span id="tpValue" class="slider-value">85</span></div>
+      <input type="range" id="tpSlider" min="0" max="100" value="85">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>True Negative (TN)</span><span id="tnValue" class="slider-value">75</span></div>
+      <input type="range" id="tnSlider" min="0" max="100" value="75">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>False Positive (FP)</span><span id="fpValue" class="slider-value">10</span></div>
+      <input type="range" id="fpSlider" min="0" max="100" value="10">
+    </div>
+    <div class="slider-group">
+      <div class="slider-label"><span>False Negative (FN)</span><span id="fnValue" class="slider-value">15</span></div>
+      <input type="range" id="fnSlider" min="0" max="100" value="15">
+    </div>
+  </div>
+
+  <!-- PANEL 2 -->
+  <div class="matrix">
+    <div class="matrix-grid">
+      <div></div>
+      <div class="matrix-header">Pred +</div>
+      <div class="matrix-header">Pred −</div>
+
+      <div class="matrix-row-label">Akt +</div>
+      <div id="tpCell" class="matrix-cell tp">85</div>
+      <div id="fnCell" class="matrix-cell fn">15</div>
+
+      <div class="matrix-row-label">Akt −</div>
+      <div id="fpCell" class="matrix-cell fp">10</div>
+      <div id="tnCell" class="matrix-cell tn">75</div>
+    </div>
+  </div>
+
+  <!-- PANEL 3 -->
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-title">Accuracy</div>
+      <div id="accuracy" class="metric-value">0.870</div>
+      <div class="metric-formula">(TP + TN) / Total</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">Precision</div>
+      <div id="precision" class="metric-value">0.895</div>
+      <div class="metric-formula">TP / (TP + FP)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">Recall</div>
+      <div id="recall" class="metric-value">0.850</div>
+      <div class="metric-formula">TP / (TP + FN)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-title">F1 Score</div>
+      <div id="f1score" class="metric-value">0.872</div>
+      <div class="metric-formula">2×(P×R)/(P+R)</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function update() {
+  const tp = +tpSlider.value, tn = +tnSlider.value, fp = +fpSlider.value, fn = +fnSlider.value;
+  tpValue.textContent = tp; tnValue.textContent = tn; fpValue.textContent = fp; fnValue.textContent = fn;
+  tpCell.textContent = tp; tnCell.textContent = tn; fpCell.textContent = fp; fnCell.textContent = fn;
+
+  const total = tp + tn + fp + fn;
+  const acc = (tp + tn) / total;
+  const pre = tp / (tp + fp);
+  const rec = tp / (tp + fn);
+  const f1 = 2 * (pre * rec) / (pre + rec);
+
+  accuracy.textContent = acc.toFixed(3);
+  precision.textContent = pre.toFixed(3);
+  recall.textContent = rec.toFixed(3);
+  f1score.textContent = f1.toFixed(3);
+}
+
+[tpSlider, tnSlider, fpSlider, fnSlider].forEach(s => s.addEventListener('input', update));
+update();
+</script>
+
+</body>
+</html>
