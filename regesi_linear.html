@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regresi Linear Interaktif</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+  
+  body::before {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    top: -250px;
+    right: -250px;
+    animation: float 20s infinite ease-in-out;
+  }
+  
+  body::after {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+    bottom: -200px;
+    left: -200px;
+    animation: float 15s infinite ease-in-out reverse;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(50px, -50px) rotate(120deg); }
+    66% { transform: translate(-50px, 50px) rotate(240deg); }
+  }
+  
+  .container {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 30px;
+    padding: 40px;
+    max-width: 900px;
+    width: 100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+    animation: slideIn 0.6s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  h1 {
+    font-size: 2.2em;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    font-weight: 800;
+  }
+  
+  .subtitle {
+    color: #666;
+    font-size: 1.1em;
+    margin-bottom: 30px;
+  }
+  
+  .chart-wrapper {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    position: relative;
+  }
+  
+  canvas {
+    max-height: 400px;
+  }
+  
+  .controls {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 20px;
+  }
+  
+  .slider-group {
+    margin-bottom: 25px;
+  }
+  
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+  }
+  
+  .slider-value {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-weight: 700;
+    min-width: 100px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    border-radius: 10px;
+    background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+    outline: none;
+    opacity: 0.9;
+    transition: opacity 0.3s;
+    cursor: pointer;
+  }
+  
+  input[type="range"]:hover {
+    opacity: 1;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+  }
+  
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+  }
+  
+  input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+  }
+  
+  .prediction-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  .prediction-label {
+    font-size: 1em;
+    opacity: 0.9;
+    margin-bottom: 10px;
+  }
+  
+  .prediction-value {
+    font-size: 3em;
+    font-weight: 800;
+    text-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  
+  .info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .info-card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+  
+  .info-card-title {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  
+  .info-card-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .equation {
+    background: rgba(255,255,255,0.5);
+    padding: 15px;
+    border-radius: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #333;
+    margin-top: 15px;
+    text-align: center;
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 25px;
+    }
+    
+    h1 {
+      font-size: 1.6em;
+    }
+    
+    .subtitle {
+      font-size: 1em;
+    }
+    
+    .prediction-value {
+      font-size: 2.5em;
+    }
+    
+    .info-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 1000;
+  }
+  
+  .badge {
+    display: inline-block;
+    background: rgba(102, 126, 234, 0.2);
+    color: #667eea;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-left: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 Regresi Linear Interaktif</h1>
+  <p class="subtitle">Jam Belajar vs Nilai Ujian <span class="badge">Machine Learning</span></p>
+  
+  <div class="chart-wrapper">
+    <canvas id="chart"></canvas>
+  </div>
+  
+  <div class="controls">
+    <div class="slider-group">
+      <div class="slider-label">
+        <span>⏰ Jam Belajar</span>
+        <span class="slider-value"><span id="jam">3.0</span> jam</span>
+      </div>
+      <input type="range" id="slider" min="0" max="8" step="0.1" value="3">
+    </div>
+    
+    <div class="equation">
+      Y = <span id="intercept">48.0</span> + <span id="slope">5.0</span> × X
+    </div>
+  </div>
+  
+  <div class="prediction-box">
+    <div class="prediction-label">🎯 Prediksi Nilai Ujian</div>
+    <div class="prediction-value"><span id="prediksi">63.0</span></div>
+  </div>
+  
+  <div class="info-cards">
+    <div class="info-card">
+      <div class="info-card-title">Koefisien (Slope)</div>
+      <div class="info-card-value" id="slopeDisplay">5.0</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">Intercept</div>
+      <div class="info-card-value" id="interceptDisplay">48.0</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">R² Score</div>
+      <div class="info-card-value" id="r2Display">0.95</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Data asli
+  const X = [1, 2, 3, 4, 5];
+  const Y = [50, 60, 65, 70, 75];
+  
+  // Hitung persamaan regresi manual: Y = a + bX
+  const n = X.length;
+  const meanX = X.reduce((a,b)=>a+b)/n;
+  const meanY = Y.reduce((a,b)=>a+b)/n;
+  
+  const b = X.map((x,i)=>(x-meanX)*(Y[i]-meanY)).reduce((a,b)=>a+b)
+            / X.map(x=>(x-meanX)**2).reduce((a,b)=>a+b);
+  const a = meanY - b*meanX;
+  
+  // Hitung R²
+  const yPred = X.map(x => a + b*x);
+  const ssTot = Y.map(y => (y-meanY)**2).reduce((a,b)=>a+b);
+  const ssRes = Y.map((y,i) => (y-yPred[i])**2).reduce((a,b)=>a+b);
+  const r2 = 1 - (ssRes/ssTot);
+  
+  // Update info cards
+  document.getElementById('slopeDisplay').textContent = b.toFixed(2);
+  document.getElementById('interceptDisplay').textContent = a.toFixed(2);
+  document.getElementById('r2Display').textContent = r2.toFixed(3);
+  document.getElementById('intercept').textContent = a.toFixed(1);
+  document.getElementById('slope').textContent = b.toFixed(1);
+  
+  // Buat titik garis regresi
+  const Xline = Array.from({length:81}, (_,i)=>i/10);
+  const Yline = Xline.map(x=>a + b*x);
+  
+  // Buat chart dengan animasi
+  const ctx = document.getElementById('chart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Data Training',
+          data: X.map((x,i)=>({x:x,y:Y[i]})),
+          backgroundColor: 'rgba(102, 126, 234, 0.8)',
+          borderColor: 'rgba(102, 126, 234, 1)',
+          borderWidth: 2,
+          pointRadius: 8,
+          pointHoverRadius: 12,
+          pointHoverBackgroundColor: 'rgba(118, 75, 162, 1)',
+        },
+        {
+          label: 'Garis Regresi',
+          type: 'line',
+          data: Xline.map((x,i)=>({x:x,y:Yline[i]})),
+          borderColor: 'rgba(255, 99, 132, 0.8)',
+          borderWidth: 3,
+          fill: false,
+          pointRadius: 0,
+          tension: 0.1
+        },
+        {
+          label: 'Prediksi Anda',
+          data: [{x:3, y:a + b*3}],
+          backgroundColor: 'rgba(75, 192, 192, 1)',
+          borderColor: 'rgba(255, 255, 255, 1)',
+          borderWidth: 3,
+          pointRadius: 12,
+          pointHoverRadius: 15,
+          pointStyle: 'star'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: {
+        duration: 1500,
+        easing: 'easeInOutQuart'
+      },
+      plugins: {
+        legend: { 
+          position: 'top',
+          labels: {
+            font: { size: 13, weight: 'bold' },
+            padding: 15,
+            usePointStyle: true
+          }
+        },
+        tooltip: { 
+          enabled: true,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          padding: 12,
+          cornerRadius: 8,
+          titleFont: { size: 14, weight: 'bold' },
+          bodyFont: { size: 13 },
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: (${context.parsed.x.toFixed(1)}, ${context.parsed.y.toFixed(1)})`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { 
+          title: { 
+            display: true, 
+            text: 'Jam Belajar (X)',
+            font: { size: 14, weight: 'bold' }
+          },
+          min: 0, 
+          max: 8,
+          grid: {
+            color: 'rgba(0,0,0,0.05)'
+          }
+        },
+        y: { 
+          title: { 
+            display: true, 
+            text: 'Nilai Ujian (Y)',
+            font: { size: 14, weight: 'bold' }
+          },
+          min: 40, 
+          max: 90,
+          grid: {
+            color: 'rgba(0,0,0,0.05)'
+          }
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'nearest'
+      }
+    }
+  });
+  
+  // Slider interaktif dengan animasi smooth
+  const slider = document.getElementById('slider');
+  const jamLabel = document.getElementById('jam');
+  const prediksiLabel = document.getElementById('prediksi');
+  
+  let animationFrame;
+  let currentX = 3;
+  let targetX = 3;
+  
+  function animateBall() {
+    // Smooth interpolation
+    currentX += (targetX - currentX) * 0.15;
+    
+    const nilai = a + b * currentX;
+    
+    // Update chart dengan posisi smooth
+    chart.data.datasets[2].data = [{x: currentX, y: nilai}];
+    chart.update('none');
+    
+    // Lanjutkan animasi jika belum sampai target
+    if (Math.abs(targetX - currentX) > 0.01) {
+      requestAnimationFrame(animateBall);
+    }
+  }
+  
+  slider.addEventListener('input', function() {
+    const jam = parseFloat(slider.value);
+    const nilai = a + b * jam;
+    
+    jamLabel.textContent = jam.toFixed(1);
+    prediksiLabel.textContent = nilai.toFixed(1);
+    
+    // Set target dan mulai animasi smooth
+    targetX = jam;
+    animateBall();
+  });
+  
+  // Tambahan: Efek visual saat page load
+  window.addEventListener('load', () => {
+    document.querySelector('.container').style.animation = 'slideIn 0.8s ease-out';
+  });
+</script>
+</body>
+</html>
